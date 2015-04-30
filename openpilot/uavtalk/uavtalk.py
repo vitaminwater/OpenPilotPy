@@ -38,12 +38,11 @@ TYPE_OBJ_REQ = 0x01
 TYPE_OBJ_ACK = 0x02
 TYPE_ACK = 0x03
 
-MIN_HEADER_LENGTH = 8  # sync(1), type (1), size(2), object ID(4)
-MAX_HEADER_LENGTH = 10 # sync(1), type (1), size(2), object ID (4), instance ID(2 not used in single objects)
+HEADER_LENGTH = 10  # sync(1), type (1), size(2), object ID(4), Intance ID (2)
 
 MAX_PAYLOAD_LENGTH = 255
 CHECKSUM_LENGTH = 1
-MAX_PACKET_LENGTH = (MAX_HEADER_LENGTH + MAX_PAYLOAD_LENGTH + CHECKSUM_LENGTH)
+MAX_PACKET_LENGTH = (HEADER_LENGTH + MAX_PAYLOAD_LENGTH + CHECKSUM_LENGTH)
     
 
         
@@ -150,7 +149,7 @@ class UavTalkRecThread(threading.Thread):
             
             if self.rxCount == 2:    
                 # Received complete packet size, check for valid packet size
-                if (self.rxSize < MIN_HEADER_LENGTH) or (self.rxSize > MAX_HEADER_LENGTH + MAX_PAYLOAD_LENGTH):
+                if (self.rxSize < HEADER_LENGTH) or (self.rxSize > MAX_HEADER_LENGTH + MAX_PAYLOAD_LENGTH):
                     logging.error("INVALID Packet Size")
                     self.rxState = UavTalkRecThread.STATE_SYNC
                 else:
@@ -169,7 +168,7 @@ class UavTalkRecThread(threading.Thread):
                 if self.obj != None:
                     self.rxDataSize = self.obj.getSerialisedSize()
                     
-                    if MIN_HEADER_LENGTH+self.obj.getSerialisedSize() != self.rxSize:
+                    if HEADER_LENGTH+self.obj.getSerialisedSize() != self.rxSize:
                         logging.error("packet Size MISMATCH")
                         self.rxState = UavTalkRecThread.STATE_SYNC
                     else:
@@ -254,21 +253,20 @@ class UavTalk(object):
 
         self.txLock.acquire()
         
-        header = [SYNC, type | VERSION, 0, 0, 0, 0, 0, 0]
+        header = [SYNC, type | VERSION, 0, 0, 0, 0, 0, 0, 0, 0]
         
-        length = MIN_HEADER_LENGTH 
+        length = HEADER_LENGTH 
         if data != None: 
             length += len(data)
         header[2] = length & 0xFF
         header[3] = (length >>8) & 0xFF
-        for i in xrange(4,8): 
+        for i in xrange(4,8):
             header[i] = objId & 0xff
             objId >>= 8
-        
+
         crc = Crc()
         crc.addList(header)
         self._writeStream("".join(map(chr,header)))
-        logging.debug("".join(map(chr,header)))
         
         if data != None:
             crc.addList(data)

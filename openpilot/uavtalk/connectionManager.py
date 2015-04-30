@@ -109,7 +109,7 @@ class ConnectionManager(object):
         startTime = time.clock()
         while not self.connected:
             try:
-                self.waitObjUpdate(self.ftsObj, request=timeout, timeout=5)
+                self.waitObjUpdate(self.ftsObj.metadata, request=timeout, timeout=5)
                 timeout = False
                 self._onFtsChange()
                 if self.connected:
